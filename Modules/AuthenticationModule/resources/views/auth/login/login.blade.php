@@ -1,6 +1,16 @@
 @extends('authenticationmodule::layouts.master')
 @section('content')
     <div class="container-fluid bg-dark">
+        @if($errors->any())
+            <div class="alert alert-danger">
+                {{ $errors->first('alert') }}
+            </div>
+        @elseif (session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <div class="d-flex align-items-center justify-content-center" style="height: 100vh">
             <form action="{{  route('login') }}" method="POST" style="width: 500px">
                 @csrf

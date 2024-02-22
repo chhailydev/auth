@@ -6,16 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Modules\AuthenticationModule\App\Models\auth_user;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
 class LoginController extends Controller
 {
-    use AuthenticatesUsers;
-
     protected $redirectTo = "/home";
 
     public function __construct()
@@ -28,33 +26,48 @@ class LoginController extends Controller
     }
 
     public function login(Request $request){
-        $request->validate([
+        $credentials = $request->validate([
             'email' => 'required',
             'password' => 'required',
         ]);
 
-        if($this->attemptLogin($request)){
-            return $this->sendLoginResponse($request);
+        $email = $request->input('email');
+        $password = $request->input('password');
+
+        if(Auth::attempt($credentials)){
+            return redirect()->intended(route('home'))->with('success', 'Login successful!');
         }
 
-        return $this->sendFailedLoginResponse($request);
+        return redirect()->back()->withInput()->withErrors([
+                'alert' => 'Invalid email or password. Please try again!',
+        ]);
     }
 
     public function username(){
         return 'email';
     }
 
-    protected function sendLoginResponse(Request $request){
-        $request->session()->regenerate();
-
-        return $this->authenticated($request, $this->guard()->user())
-        ?: redirect()->intended($this->redirectPath());
+    protected function attemptLogin(Request $request)
+    {
+        // Your authentication logic here
+        return $this->guard(
+            $this->credentials($request), $request->filled('remember')
+        );
     }
 
-    protected function sendFailedLoginResponse(Request $request){
-        throw ValidationException::withMessages([
-            $this->username() => [trans('auth.failed')],
-        ]);
+    protected function guard()
+    {
+        return Auth::guard('web');
+    }
+
+    protected function credentials(Request $request)
+    {
+        return $request->only($this->username(), 'password');
+    }
+
+    protected function authenticated(Request $request, $user)
+    {
+        return redirect()->route('home');
     }
 
     protected function validator(array $data){
