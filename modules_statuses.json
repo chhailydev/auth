@@ -1,3 +1,4 @@
 {
-    "AuthenticationModule": true
+    "AuthenticationModule": true,
+    "Browse": true
 }
